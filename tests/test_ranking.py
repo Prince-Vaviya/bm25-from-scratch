@@ -9,11 +9,10 @@ for i in range(1, 7):
     with open(f"data/{i}.txt", "r") as content:
         file_contents = content.read()
 
-    index.add_documents(i, tokenize(file_contents))
+    index.add_document(i, tokenize(file_contents))
 
 ranker = BM25Ranker(index)
 
-for query in ["energy", "solar", "solar energy", "human brain", "network protocol" ,"xyz"]:
-    candidates = retrieve_candidates(query, index)
-    results = ranker.rank(query, candidates)
-    print(query, " ---> ", results)
+distance = ranker.term_proximity(3, "solar", "energy")
+
+print(distance)
