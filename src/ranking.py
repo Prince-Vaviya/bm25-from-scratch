@@ -101,3 +101,58 @@ class BM25Ranker:
         )
 
         return bm25_score + proximity_weight * proximity
+
+    def query_proximity(self, document_id, query):
+
+        terms = list(dict.fromkeys(tokenize(query)))
+
+        if len(terms) < 2:
+            return 0
+
+        positions = []
+
+        for term in terms:
+
+            postings = self.index.search(term)
+
+            if document_id not in postings:
+                return 0
+
+            for position in postings[document_id]["positions"]:
+                positions.append((position, term))
+
+        positions.sort()
+
+        required_terms = set(terms)
+        window_terms = set()
+
+        left = 0
+        best_window = float("inf")
+
+        for right in range(len(positions)):
+
+            window_terms.add(positions[right][1])
+
+            while required_terms.issubset(window_terms):
+
+                window_size = (
+                    positions[right][0]
+                    - positions[left][0]
+                    + 1
+                )
+
+                best_window = min(
+                    best_window,
+                    window_size
+                )
+
+                window_terms.discard(
+                    positions[left][1]
+                )
+
+                left += 1
+
+        if best_window == float("inf"):
+            return 0
+
+        return 1 / best_window
